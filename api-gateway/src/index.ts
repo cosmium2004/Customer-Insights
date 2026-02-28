@@ -3,15 +3,22 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
+import { createServer } from 'http';
 import authRoutes from './routes/authRoutes';
+import dataRoutes from './routes/dataRoutes';
 import { errorHandler } from './middleware/errorHandler';
 import { requestLogger } from './middleware/requestLogger';
 import { globalRateLimiter } from './middleware/rateLimiter';
+import { initializeWebSocket } from './config/websocket';
 
 dotenv.config();
 
 const app = express();
+const httpServer = createServer(app);
 const PORT = process.env.PORT || 3000;
+
+// Initialize WebSocket server
+initializeWebSocket(httpServer);
 
 // HTTPS enforcement middleware (in production)
 if (process.env.NODE_ENV === 'production') {
@@ -63,6 +70,7 @@ app.use(morgan('combined'));
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/data', dataRoutes);
 
 // Health check
 app.get('/health', (req: Request, res: Response) => {
@@ -82,8 +90,9 @@ app.use(errorHandler);
 
 // Start server
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
+  httpServer.listen(PORT, () => {
     console.log(`API Gateway running on port ${PORT}`);
+    console.log(`WebSocket server initialized`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`CORS allowed origins: ${allowedOrigins.join(', ')}`);
   });
