@@ -320,17 +320,44 @@ The plan covers 15 major requirements including authentication, data ingestion, 
   - Test data ingestion flow end-to-end
   - Test ML sentiment predictions are accurate and fast
   - Ensure all tests pass, ask the user if questions arise
+  - **Status**: Data ingestion tests passing (13/13), ML service tests mostly passing (33/37)
+  - **Issues Found**: Token replacement bug in preprocessing, edge case handling for special characters
 
 
-- [ ] 11. Implement behavior pattern detection service
-  - [ ] 11.1 Create pattern detection helper functions
+- [x] 10.1 Fix ML service preprocessing issues
+  - [x] 10.1.1 Fix token replacement in preprocessing
+    - Update special character removal pattern to preserve [URL], [EMAIL], [NUM] tokens
+    - Ensure brackets are not removed during special character cleaning
+    - Verify token replacement tests pass
+    - _Requirements: 3.6, 3.7, 3.8, 3.9_
+  
+  - [x] 10.1.2 Handle edge cases in text preprocessing
+    - Add handling for text that becomes empty after preprocessing
+    - Options: return neutral sentiment, raise error, or skip preprocessing
+    - Update property tests to handle edge cases gracefully
+    - _Requirements: 3.1, 3.2, 7.1_
+  
+  - [x] 10.1.3 Verify all ML service tests pass
+    - Run pytest to confirm all 37 tests pass
+    - Verify token replacement works correctly
+    - Verify edge case handling works as expected
+    - _Requirements: 3.1-3.12_
+
+- [x] 11. Checkpoint - Verify ML service fixes
+  - Test all ML service tests pass
+  - Test preprocessing handles edge cases
+  - Ensure all tests pass, ask the user if questions arise
+
+
+- [x] 12. Implement behavior pattern detection service
+  - [x] 12.1 Create pattern detection helper functions
     - Implement calculate_channel_frequency to detect frequent channel usage
     - Implement analyze_sentiment_trend to detect sentiment patterns
     - Implement detect_temporal_pattern to detect time-based patterns
     - Implement calculate_engagement_score to measure engagement level
     - _Requirements: 4.5, 4.6, 4.7, 4.8_
   
-  - [ ] 11.2 Implement pattern detection workflow
+  - [x] 12.2 Implement pattern detection workflow
     - Create detect_behavior_patterns function
     - Fetch customer interactions from past 30 days
     - Return empty list if customer has fewer than 5 interactions
@@ -342,21 +369,21 @@ The plan covers 15 major requirements including authentication, data ingestion, 
     - Sort patterns by confidence descending
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9, 4.10_
   
-  - [ ] 11.3 Create GET /api/patterns/:customerId endpoint
+  - [x] 12.3 Create GET /api/patterns/:customerId endpoint
     - Implement endpoint with authentication middleware
     - Call detect_behavior_patterns
     - Return array of detected patterns
     - Cache results for 10 minutes
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.9, 14.4_
   
-  - [ ]* 11.4 Write property test for pattern detection confidence threshold
+  - [x] 12.4 Write property test for pattern detection confidence threshold
     - **Property 6: Pattern Detection Confidence Threshold**
     - **Validates: Requirements 4.3, 4.4, 10.7**
     - Test that all detected patterns have confidence between 0.7 and 1.0 and positive frequency
     - Test with various customer interaction histories and edge cases
     - _Requirements: 4.3, 4.4, 10.7_
   
-  - [ ]* 11.5 Write unit tests for pattern detection
+  - [x] 12.5 Write unit tests for pattern detection
     - Test calculate_channel_frequency identifies frequent channels
     - Test analyze_sentiment_trend detects consistent sentiment
     - Test detect_temporal_pattern identifies time patterns
@@ -365,8 +392,8 @@ The plan covers 15 major requirements including authentication, data ingestion, 
     - Test detect_behavior_patterns filters patterns by confidence
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8_
 
-- [ ] 12. Implement query service with optimized database access
-  - [ ] 12.1 Create query service with filter and pagination support
+- [x] 13. Implement query service with optimized database access
+  - [x] 13.1 Create query service with filter and pagination support
     - Implement getInsights function with InsightFilters and Pagination parameters
     - Support filtering by date range, channels, sentiment range, customer segments
     - Support pagination with configurable page size (max 100)
@@ -376,7 +403,7 @@ The plan covers 15 major requirements including authentication, data ingestion, 
     - Return results with total count and pagination metadata
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8, 5.12, 9.13_
   
-  - [ ] 12.2 Create GET /api/insights endpoint
+  - [x] 13.2 Create GET /api/insights endpoint
     - Implement endpoint with authentication middleware
     - Parse query parameters for filters and pagination
     - Call queryService.getInsights
@@ -384,39 +411,39 @@ The plan covers 15 major requirements including authentication, data ingestion, 
     - Cache results for 5 minutes
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8, 5.9, 5.12, 8.3, 14.3_
   
-  - [ ] 12.3 Create GET /api/insights/sentiment-trends endpoint
+  - [x] 13.3 Create GET /api/insights/sentiment-trends endpoint
     - Implement endpoint for sentiment trend aggregations
     - Support time range and groupBy parameters
     - Cache results for 15 minutes
     - _Requirements: 5.1, 5.2, 5.3, 8.3, 14.5_
   
-  - [ ] 12.4 Create GET /api/insights/metrics endpoint
+  - [x] 13.4 Create GET /api/insights/metrics endpoint
     - Implement endpoint for aggregated metrics
     - Support filtering by date range and segments
     - Cache results for 5 minutes
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 8.3, 14.3_
   
-  - [ ] 12.5 Create GET /api/interactions/search endpoint
+  - [x] 13.5 Create GET /api/interactions/search endpoint
     - Implement full-text search on interaction content
     - Use PostgreSQL full-text search indexes
     - Support pagination
     - _Requirements: 5.1, 5.5, 5.6, 5.7, 5.8, 10.12_
   
-  - [ ]* 12.6 Write property test for query result consistency
+  - [x] 13.6 Write property test for query result consistency
     - **Property 5: Query Result Consistency**
     - **Validates: Requirement 5.10**
     - Test that identical queries with no intervening writes return identical results
     - Test with concurrent query execution
     - _Requirements: 5.10_
   
-  - [ ]* 12.7 Write property test for database index usage
+  - [x] 13.7 Write property test for database index usage
     - **Property 7: Database Index Usage**
     - **Validates: Requirements 5.11, 10.9, 10.10, 10.11, 10.12**
     - Test that frequent queries use indexes and avoid sequential scans
     - Use EXPLAIN ANALYZE to verify query plans
     - _Requirements: 5.11, 10.9, 10.10, 10.11, 10.12_
   
-  - [ ]* 12.8 Write unit tests for query service
+  - [x] 13.8 Write unit tests for query service
     - Test getInsights respects pagination limits
     - Test getInsights applies filters correctly
     - Test getInsights handles empty result sets
@@ -424,21 +451,21 @@ The plan covers 15 major requirements including authentication, data ingestion, 
     - Test full-text search returns relevant results
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8, 5.11, 10.12_
 
-- [ ] 13. Implement Redis caching layer
-  - [ ] 13.1 Set up Redis client and connection pooling
+- [x] 14. Implement Redis caching layer
+  - [x] 14.1 Set up Redis client and connection pooling
     - Configure Redis client with connection options
     - Implement connection error handling and retry logic
     - Set up Redis health check
     - _Requirements: 8.5, 14.1_
   
-  - [ ] 13.2 Create caching service module
+  - [x] 14.2 Create caching service module
     - Implement cache key generation: {endpoint}:{hash(params)}
     - Implement ML cache key generation: ml:{model_type}:{hash(text)}
     - Implement get, set, and delete operations
     - Implement cache invalidation logic
     - _Requirements: 14.6, 14.7, 14.8, 14.9_
   
-  - [ ] 13.3 Integrate caching into API endpoints
+  - [x] 14.3 Integrate caching into API endpoints
     - Cache JWT token verification results (1-hour TTL)
     - Cache dashboard aggregations (5-minute TTL)
     - Cache customer profiles (10-minute TTL)
@@ -448,7 +475,7 @@ The plan covers 15 major requirements including authentication, data ingestion, 
     - Invalidate related caches on data updates
     - _Requirements: 3.12, 8.5, 8.6, 8.7, 8.8, 14.1, 14.2, 14.3, 14.4, 14.5, 14.6, 14.7_
   
-  - [ ]* 13.4 Write unit tests for caching service
+  - [x] 14.4 Write unit tests for caching service
     - Test cache key generation is consistent
     - Test cache set and get operations
     - Test cache expiration (TTL)
@@ -456,21 +483,21 @@ The plan covers 15 major requirements including authentication, data ingestion, 
     - Test cache miss handling
     - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5, 14.6, 14.7, 14.8, 14.9_
 
-- [ ] 14. Checkpoint - Verify query service and caching
+- [x] 15. Checkpoint - Verify query service and caching
   - Test query endpoints with various filters and pagination
   - Test caching reduces database load
   - Ensure all tests pass, ask the user if questions arise
 
 
-- [ ] 15. Implement WebSocket server for real-time updates
-  - [ ] 15.1 Set up WebSocket server with Socket.IO
+- [ ] 16. Implement WebSocket server for real-time updates
+  - [ ] 16.1 Set up WebSocket server with Socket.IO
     - Configure Socket.IO server with CORS settings
     - Implement WSS (WebSocket Secure) for production
     - Set up connection authentication using JWT tokens
     - Implement heartbeat ping/pong every 30 seconds
     - _Requirements: 6.1, 6.5, 9.11_
   
-  - [ ] 15.2 Create WebSocket event emitter service
+  - [ ] 16.2 Create WebSocket event emitter service
     - Implement event emission for 'interaction.created' events
     - Implement event emission for 'sentiment.analyzed' events
     - Filter events by organization (only send to clients in same org)
@@ -479,26 +506,26 @@ The plan covers 15 major requirements including authentication, data ingestion, 
     - Batch multiple rapid events into single messages
     - _Requirements: 6.2, 6.3, 6.4, 6.9, 6.10_
   
-  - [ ] 15.3 Implement client reconnection and event buffering
+  - [ ] 16.3 Implement client reconnection and event buffering
     - Implement automatic reconnection with exponential backoff
     - Buffer up to 100 events during disconnection
     - Sync missed events on reconnection
     - Fall back to REST API if buffer overflows
     - _Requirements: 6.6, 6.7, 6.8_
   
-  - [ ] 15.4 Integrate WebSocket events into data ingestion workflow
+  - [ ] 16.4 Integrate WebSocket events into data ingestion workflow
     - Emit 'interaction.created' event after successful ingestion
     - Emit 'sentiment.analyzed' event after ML analysis completes
     - _Requirements: 2.8, 6.2, 6.3_
   
-  - [ ]* 15.5 Write property test for real-time event delivery
+  - [ ]* 16.5 Write property test for real-time event delivery
     - **Property 10: Real-time Event Delivery**
     - **Validates: Requirements 2.8, 6.2, 6.3, 6.4**
     - Test that events are delivered to relevant clients within 1 second
     - Test with WebSocket clients, latency measurement, network delay simulation
     - _Requirements: 2.8, 6.2, 6.3, 6.4_
   
-  - [ ]* 15.6 Write integration tests for WebSocket functionality
+  - [ ]* 16.6 Write integration tests for WebSocket functionality
     - Test WebSocket connection establishment
     - Test event emission after interaction creation
     - Test event filtering by organization
@@ -506,14 +533,14 @@ The plan covers 15 major requirements including authentication, data ingestion, 
     - Test event buffering and sync
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8_
 
-- [ ] 16. Implement ML analysis job queue and worker
-  - [ ] 16.1 Set up Bull queue for ML analysis jobs
+- [ ] 17. Implement ML analysis job queue and worker
+  - [ ] 17.1 Set up Bull queue for ML analysis jobs
     - Configure Bull with Redis backend
     - Create 'ml-analysis' queue
     - Set up job retry logic (3 attempts with exponential backoff)
     - _Requirements: 2.7, 2.10_
   
-  - [ ] 16.2 Create ML analysis worker
+  - [ ] 17.2 Create ML analysis worker
     - Implement worker to process ML analysis jobs
     - Call ML service for sentiment prediction
     - Update interaction record with sentiment scores
@@ -522,34 +549,34 @@ The plan covers 15 major requirements including authentication, data ingestion, 
     - Emit 'sentiment.analyzed' WebSocket event
     - _Requirements: 2.7, 2.10, 12.5, 12.6, 12.8, 12.9, 12.10_
   
-  - [ ] 16.3 Integrate job queue into ingestion workflow
+  - [ ] 17.3 Integrate job queue into ingestion workflow
     - Queue ML analysis job after interaction is stored
     - Pass interaction ID and content to job
     - _Requirements: 2.7, 2.10_
   
-  - [ ]* 16.4 Write integration tests for job queue
+  - [ ]* 17.4 Write integration tests for job queue
     - Test job is queued after ingestion
     - Test worker processes job and updates database
     - Test job retry on failure
     - Test WebSocket event is emitted after processing
     - _Requirements: 2.7, 2.10, 12.8, 12.9, 12.10_
 
-- [ ] 17. Implement error handling and monitoring
-  - [ ] 17.1 Create centralized error handling
+- [ ] 18. Implement error handling and monitoring
+  - [ ] 18.1 Create centralized error handling
     - Implement error handler middleware for API Gateway
     - Return appropriate HTTP status codes (400, 401, 403, 404, 429, 500, 503, 507)
     - Format error responses consistently
     - Log all errors with stack traces
     - _Requirements: 7.6, 7.7, 7.8, 7.9, 7.10, 7.11, 7.12, 7.13, 11.2_
   
-  - [ ] 17.2 Implement circuit breaker for external services
+  - [ ] 18.2 Implement circuit breaker for external services
     - Implement circuit breaker for ML service calls
     - Implement circuit breaker for database connections
     - Activate after 5 consecutive failures
     - Implement exponential backoff retry logic
     - _Requirements: 7.11, 7.12_
   
-  - [ ] 17.3 Set up Prometheus metrics collection
+  - [ ] 18.3 Set up Prometheus metrics collection
     - Expose /metrics endpoint for Prometheus scraping
     - Track request rate, response time percentiles, error rate
     - Track ML prediction latency and cache hit rate
@@ -557,7 +584,7 @@ The plan covers 15 major requirements including authentication, data ingestion, 
     - Track WebSocket connection count and message rate
     - _Requirements: 11.6, 11.7, 11.8, 11.9, 11.10_
   
-  - [ ] 17.4 Implement alerting for critical metrics
+  - [ ] 18.4 Implement alerting for critical metrics
     - Alert when response time p95 exceeds 1000ms
     - Alert when error rate exceeds 5%
     - Alert when cache hit rate falls below 70%
@@ -565,7 +592,7 @@ The plan covers 15 major requirements including authentication, data ingestion, 
     - Alert when storage capacity exceeds 90%
     - _Requirements: 11.11, 11.12, 11.13, 14.10_
   
-  - [ ] 17.5 Implement comprehensive logging
+  - [ ] 18.5 Implement comprehensive logging
     - Log API requests with method, path, status, response time
     - Log authentication failures with timestamp and IP
     - Log ML predictions exceeding 500ms
@@ -573,22 +600,22 @@ The plan covers 15 major requirements including authentication, data ingestion, 
     - Log rate limit violations
     - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5, 13.7_
   
-  - [ ]* 17.6 Write unit tests for error handling
+  - [ ]* 18.6 Write unit tests for error handling
     - Test error middleware formats errors correctly
     - Test circuit breaker activates after failures
     - Test retry logic with exponential backoff
     - Test appropriate status codes are returned
     - _Requirements: 7.6, 7.7, 7.8, 7.9, 7.10, 7.11, 7.12, 7.13_
 
-- [ ] 18. Checkpoint - Verify real-time updates and monitoring
+- [ ] 19. Checkpoint - Verify real-time updates and monitoring
   - Test WebSocket connections and event delivery
   - Test error handling and circuit breakers
   - Test metrics collection and alerting
   - Ensure all tests pass, ask the user if questions arise
 
 
-- [ ] 19. Implement React frontend application
-  - [ ] 19.1 Set up React application with TypeScript
+- [ ] 20. Implement React frontend application
+  - [ ] 20.1 Set up React application with TypeScript
     - Initialize React app with Create React App or Vite
     - Configure TypeScript with strict mode
     - Set up React Router for navigation
@@ -596,7 +623,7 @@ The plan covers 15 major requirements including authentication, data ingestion, 
     - Set up Socket.IO client for WebSocket connections
     - _Requirements: 6.1_
   
-  - [ ] 19.2 Create authentication context and components
+  - [ ] 20.2 Create authentication context and components
     - Implement AuthContext for managing user state and tokens
     - Create Login component with form validation
     - Create Register component with password strength validation
@@ -605,13 +632,13 @@ The plan covers 15 major requirements including authentication, data ingestion, 
     - Implement logout functionality
     - _Requirements: 1.1, 1.2, 1.10_
   
-  - [ ] 19.3 Create protected route wrapper
+  - [ ] 20.3 Create protected route wrapper
     - Implement ProtectedRoute component
     - Verify token before rendering protected components
     - Redirect to login if not authenticated
     - _Requirements: 1.8_
   
-  - [ ] 19.4 Create dashboard component with real-time updates
+  - [ ] 20.4 Create dashboard component with real-time updates
     - Implement Dashboard component with time range and filter controls
     - Display customer insights with charts (use Chart.js or Recharts)
     - Connect to WebSocket for real-time updates
@@ -619,7 +646,7 @@ The plan covers 15 major requirements including authentication, data ingestion, 
     - Implement responsive design for mobile and desktop
     - _Requirements: 6.1, 6.2, 6.3, 6.4_
   
-  - [ ] 19.5 Create insight visualization components
+  - [ ] 20.5 Create insight visualization components
     - Implement SentimentTrendChart component (line chart)
     - Implement ChannelDistributionChart component (bar chart)
     - Implement BehaviorPatternList component
@@ -627,21 +654,21 @@ The plan covers 15 major requirements including authentication, data ingestion, 
     - Support real-time data updates
     - _Requirements: 6.2, 6.3_
   
-  - [ ] 19.6 Create customer detail view
+  - [ ] 20.6 Create customer detail view
     - Implement CustomerDetail component
     - Display customer profile and interaction history
     - Display detected behavior patterns
     - Display sentiment trends over time
     - _Requirements: 4.1, 4.9_
   
-  - [ ] 19.7 Create data ingestion form
+  - [ ] 20.7 Create data ingestion form
     - Implement DataIngestionForm component for manual data entry
     - Validate form inputs before submission
     - Display success/error messages
     - Support batch CSV upload
     - _Requirements: 2.1, 2.11_
   
-  - [ ]* 19.8 Write unit tests for React components
+  - [ ]* 20.8 Write unit tests for React components
     - Test Login component validates credentials
     - Test Dashboard component renders correctly
     - Test WebSocket connection and event handling
@@ -649,38 +676,38 @@ The plan covers 15 major requirements including authentication, data ingestion, 
     - Test protected routes redirect when not authenticated
     - _Requirements: 1.1, 1.2, 1.8, 6.1, 6.2, 6.3_
 
-- [ ] 20. Implement security hardening
-  - [ ] 20.1 Implement input sanitization
+- [ ] 21. Implement security hardening
+  - [ ] 21.1 Implement input sanitization
     - Sanitize all user inputs to prevent XSS attacks
     - Use DOMPurify or similar library for HTML sanitization
     - Validate and escape inputs before rendering
     - _Requirements: 9.12_
   
-  - [ ] 20.2 Implement SQL injection prevention
+  - [ ] 21.2 Implement SQL injection prevention
     - Use parameterized queries for all database operations
     - Never concatenate user input into SQL strings
     - Use ORM query builders (Knex.js) with parameter binding
     - _Requirements: 9.13_
   
-  - [ ] 20.3 Implement secure environment variable management
+  - [ ] 21.3 Implement secure environment variable management
     - Store JWT secrets in environment variables
     - Store database credentials in environment variables
     - Never commit secrets to version control
     - Use .env files for local development
     - _Requirements: 9.4_
   
-  - [ ] 20.4 Implement database encryption
+  - [ ] 21.4 Implement database encryption
     - Configure PostgreSQL SSL/TLS connections
     - Encrypt sensitive data fields using AES-256
     - _Requirements: 9.9, 9.10_
   
-  - [ ] 20.5 Implement HTTPS enforcement
+  - [ ] 21.5 Implement HTTPS enforcement
     - Configure Express to redirect HTTP to HTTPS
     - Set secure headers (Helmet.js)
     - Configure HSTS (HTTP Strict Transport Security)
     - _Requirements: 9.5_
   
-  - [ ]* 20.6 Write security tests
+  - [ ]* 21.6 Write security tests
     - Test XSS prevention with malicious inputs
     - Test SQL injection prevention with malicious queries
     - Test HTTPS enforcement
@@ -688,94 +715,94 @@ The plan covers 15 major requirements including authentication, data ingestion, 
     - Test rate limiting enforcement
     - _Requirements: 9.5, 9.6, 9.8, 9.12, 9.13_
 
-- [ ] 21. Implement database connection pooling and optimization
-  - [ ] 21.1 Configure PostgreSQL connection pooling
+- [ ] 22. Implement database connection pooling and optimization
+  - [ ] 22.1 Configure PostgreSQL connection pooling
     - Set up connection pool with 10-50 connections
     - Configure connection timeout and idle timeout
     - Implement connection health checks
     - _Requirements: 8.9_
   
-  - [ ] 21.2 Optimize database queries
+  - [ ] 22.2 Optimize database queries
     - Verify all indexes are used in query plans (EXPLAIN ANALYZE)
     - Add missing indexes if needed
     - Optimize slow queries (> 1 second)
     - Implement query result caching
     - _Requirements: 5.9, 5.11, 10.9, 10.10, 10.11, 10.12, 11.5_
   
-  - [ ] 21.3 Implement database backup and recovery
+  - [ ] 22.3 Implement database backup and recovery
     - Set up automated daily backups
     - Test backup restoration process
     - Implement point-in-time recovery
     - _Requirements: 10.1_
   
-  - [ ]* 21.4 Write performance tests
+  - [ ]* 22.4 Write performance tests
     - Test query response times under load
     - Test connection pool handles concurrent requests
     - Test database handles 50K+ data points
     - Test query performance with indexes
     - _Requirements: 5.9, 8.3, 8.9_
 
-- [ ] 22. Implement Docker containerization
-  - [ ] 22.1 Create Dockerfile for API Gateway
+- [ ] 23. Implement Docker containerization
+  - [ ] 23.1 Create Dockerfile for API Gateway
     - Create multi-stage Dockerfile for Node.js API Gateway
     - Optimize image size with Alpine base
     - Configure environment variables
     - _Requirements: Infrastructure_
   
-  - [ ] 22.2 Create Dockerfile for ML Service
+  - [ ] 23.2 Create Dockerfile for ML Service
     - Create Dockerfile for Python ML Service
     - Include ML model files in image
     - Configure GPU support if available
     - _Requirements: Infrastructure_
   
-  - [ ] 22.3 Create Dockerfile for React Frontend
+  - [ ] 23.3 Create Dockerfile for React Frontend
     - Create multi-stage Dockerfile with build and serve stages
     - Use Nginx to serve static files
     - Configure environment-specific builds
     - _Requirements: Infrastructure_
   
-  - [ ] 22.4 Create Docker Compose configuration
+  - [ ] 23.4 Create Docker Compose configuration
     - Configure services: frontend, api-gateway, ml-service, postgres, redis
     - Set up service dependencies and health checks
     - Configure volumes for data persistence
     - Configure networks for service communication
     - _Requirements: Infrastructure_
   
-  - [ ]* 22.5 Write Docker integration tests
+  - [ ]* 23.5 Write Docker integration tests
     - Test all services start successfully
     - Test service communication
     - Test data persistence across restarts
     - _Requirements: Infrastructure_
 
-- [ ] 23. Checkpoint - Verify frontend and containerization
+- [ ] 24. Checkpoint - Verify frontend and containerization
   - Test React frontend connects to API Gateway
   - Test Docker Compose brings up all services
   - Test end-to-end user flows
   - Ensure all tests pass, ask the user if questions arise
 
 
-- [ ] 24. Implement performance optimization and load testing
-  - [ ] 24.1 Implement API response time optimization
+- [ ] 25. Implement performance optimization and load testing
+  - [ ] 25.1 Implement API response time optimization
     - Optimize authentication endpoint to respond within 200ms at p95
     - Optimize data ingestion endpoint to respond within 300ms at p95
     - Optimize query endpoint to respond within 500ms at p95
     - Optimize ML prediction endpoint to respond within 500ms at p95
     - _Requirements: 8.1, 8.2, 8.3, 8.4_
   
-  - [ ] 24.2 Implement horizontal scaling support
+  - [ ] 25.2 Implement horizontal scaling support
     - Configure API Gateway for stateless operation
     - Configure ML Service for stateless operation
     - Use Redis for shared session state
     - Test load balancing across multiple instances
     - _Requirements: 8.10, 8.11_
   
-  - [ ] 24.3 Implement data streaming for large exports
+  - [ ] 25.3 Implement data streaming for large exports
     - Implement streaming responses for large query results
     - Avoid loading entire result set into memory
     - Use cursor-based pagination for exports
     - _Requirements: 15.9_
   
-  - [ ]* 24.4 Write load tests
+  - [ ]* 25.4 Write load tests
     - Test system handles 1000 concurrent users
     - Test system processes 50K+ data points
     - Test response times under load
@@ -783,14 +810,14 @@ The plan covers 15 major requirements including authentication, data ingestion, 
     - Test cache effectiveness under load
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.10, 8.11_
 
-- [ ] 25. Implement comprehensive end-to-end testing
-  - [ ]* 25.1 Write end-to-end authentication flow tests
+- [ ] 26. Implement comprehensive end-to-end testing
+  - [ ]* 26.1 Write end-to-end authentication flow tests
     - Test user registration, login, token refresh, logout
     - Test protected route access with valid/invalid tokens
     - Test rate limiting on authentication endpoints
     - _Requirements: 1.1, 1.2, 1.3, 1.5, 1.6, 1.7, 1.8, 1.9, 1.10_
   
-  - [ ]* 25.2 Write end-to-end data ingestion flow tests
+  - [ ]* 26.2 Write end-to-end data ingestion flow tests
     - Test interaction ingestion from API to database
     - Test customer record updates
     - Test ML analysis job processing
@@ -798,21 +825,21 @@ The plan covers 15 major requirements including authentication, data ingestion, 
     - Test batch ingestion
     - _Requirements: 2.1, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 2.10, 2.11_
   
-  - [ ]* 25.3 Write end-to-end ML prediction flow tests
+  - [ ]* 26.3 Write end-to-end ML prediction flow tests
     - Test sentiment prediction request from frontend to ML service
     - Test prediction caching
     - Test batch predictions
     - Test prediction response time SLA
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.12_
   
-  - [ ]* 25.4 Write end-to-end query flow tests
+  - [ ]* 26.4 Write end-to-end query flow tests
     - Test insights query with filters and pagination
     - Test sentiment trends aggregation
     - Test full-text search
     - Test query result caching
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8, 5.9, 5.10, 5.11, 5.12_
   
-  - [ ]* 25.5 Write end-to-end real-time update tests
+  - [ ]* 26.5 Write end-to-end real-time update tests
     - Test WebSocket connection establishment
     - Test real-time event delivery after interaction creation
     - Test real-time event delivery after sentiment analysis
@@ -820,21 +847,21 @@ The plan covers 15 major requirements including authentication, data ingestion, 
     - Test reconnection and event buffering
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8_
   
-  - [ ]* 25.6 Write end-to-end pattern detection tests
+  - [ ]* 26.6 Write end-to-end pattern detection tests
     - Test pattern detection for customers with sufficient data
     - Test pattern detection returns empty for insufficient data
     - Test pattern confidence thresholds
     - Test pattern caching
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.9_
 
-- [ ] 26. Final integration and system testing
-  - [ ] 26.1 Verify all requirements are implemented
+- [ ] 27. Final integration and system testing
+  - [ ] 27.1 Verify all requirements are implemented
     - Review requirements document and verify each acceptance criterion
     - Test all 15 requirements end-to-end
     - Document any deviations or limitations
     - _Requirements: All_
   
-  - [ ] 26.2 Verify all correctness properties
+  - [ ] 27.2 Verify all correctness properties
     - Run all property-based tests
     - Verify Property 1: Authentication Token Validity
     - Verify Property 2: Data Ingestion Atomicity
@@ -848,7 +875,7 @@ The plan covers 15 major requirements including authentication, data ingestion, 
     - Verify Property 10: Real-time Event Delivery
     - _Requirements: All_
   
-  - [ ] 26.3 Perform security audit
+  - [ ] 27.3 Perform security audit
     - Verify all authentication and authorization mechanisms
     - Verify input sanitization and SQL injection prevention
     - Verify rate limiting and CORS configuration
@@ -856,7 +883,7 @@ The plan covers 15 major requirements including authentication, data ingestion, 
     - Verify secrets management
     - _Requirements: 9.1-9.15_
   
-  - [ ] 26.4 Perform performance audit
+  - [ ] 27.4 Perform performance audit
     - Verify all response time SLAs are met
     - Verify caching is effective
     - Verify database queries use indexes
@@ -864,7 +891,7 @@ The plan covers 15 major requirements including authentication, data ingestion, 
     - Verify horizontal scaling works
     - _Requirements: 8.1-8.12_
   
-  - [ ] 26.5 Create deployment documentation
+  - [ ] 27.5 Create deployment documentation
     - Document environment variables and configuration
     - Document database migration process
     - Document Docker deployment steps
@@ -872,14 +899,14 @@ The plan covers 15 major requirements including authentication, data ingestion, 
     - Document backup and recovery procedures
     - _Requirements: Infrastructure_
   
-  - [ ] 26.6 Create API documentation
+  - [ ] 27.6 Create API documentation
     - Document all API endpoints with request/response examples
     - Document authentication flow
     - Document WebSocket events
     - Document error codes and messages
     - _Requirements: All_
 
-- [ ] 27. Final checkpoint - System ready for deployment
+- [ ] 28. Final checkpoint - System ready for deployment
   - Verify all tests pass (unit, integration, property-based, end-to-end)
   - Verify all requirements are met
   - Verify all correctness properties hold

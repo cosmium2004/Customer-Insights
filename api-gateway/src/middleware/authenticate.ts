@@ -2,6 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 import { AuthService } from '../services/authService';
 import { AuthenticationError } from './errorHandler';
 import { getDbConnection } from '../config/database';
+import * as cacheService from '../services/cacheService';
+import { logger } from '../config/logger';
 
 // Extend Express Request type to include user
 declare global {
@@ -18,9 +20,13 @@ declare global {
   }
 }
 
+// Cache TTL for JWT token verification (1 hour)
+const TOKEN_CACHE_TTL = 3600;
+
 /**
  * Authentication middleware for protected routes
  * Verifies JWT token from Authorization header and attaches user to request
+ * Caches verified tokens in Redis with 1-hour TTL (Requirement 14.1)
  */
 export async function authenticate(
   req: Request,
@@ -47,7 +53,19 @@ export async function authenticate(
       throw new AuthenticationError('No token provided');
     }
 
-    // Verify token
+    // Generate cache key for token
+    const cacheKey = `token:${token}`;
+
+    // Try to get cached token verification result
+    const cachedUser = await cacheService.get<any>(cacheKey);
+
+    if (cachedUser) {
+      logger.debug('Token verification cache hit', { userId: cachedUser.userId });
+      req.user = cachedUser;
+      return next();
+    }
+
+    // Cache miss - verify token
     const db = getDbConnection();
     const authService = new AuthService(db);
     const decoded = authService.verifyToken(token);
@@ -71,13 +89,19 @@ export async function authenticate(
     }
 
     // Attach user to request object
-    req.user = {
+    const userData = {
       userId: decoded.userId,
       email: decoded.email,
       role: decoded.role,
       permissions: decoded.permissions,
       organizationId: decoded.organizationId,
     };
+
+    req.user = userData;
+
+    // Cache the verified token result (1-hour TTL)
+    await cacheService.set(cacheKey, userData, TOKEN_CACHE_TTL);
+    logger.debug('Token verification cached', { userId: userData.userId });
 
     next();
   } catch (error) {

@@ -309,6 +309,7 @@ router.post(
 /**
  * POST /api/auth/logout
  * Logout and revoke refresh token
+ * Invalidates cached tokens in Redis (Requirement 14.2)
  */
 router.post(
   '/logout',
@@ -330,16 +331,26 @@ router.post(
       const db = getDbConnection();
       const authService = new AuthService(db);
 
+      // Get user ID from refresh token before revoking
+      const userId = await authService.validateRefreshToken(refreshToken);
+
       // Remove refresh token from database
       await authService.revokeRefreshToken(refreshToken);
 
-      // Invalidate cached tokens in Redis if access token provided
+      // Invalidate cached tokens in Redis
       if (accessToken) {
-        const redis = (await import('../middleware/rateLimiter')).default;
-        await redis.del(`token:${accessToken}`);
+        const cacheService = await import('../services/cacheService');
+        await cacheService.del(`token:${accessToken}`);
+      }
+
+      // Invalidate all user tokens if we have userId
+      if (userId) {
+        const cacheService = await import('../services/cacheService');
+        await cacheService.invalidateUserTokens(userId);
       }
 
       logger.info('User logged out', {
+        userId,
         timestamp: new Date().toISOString(),
       });
 

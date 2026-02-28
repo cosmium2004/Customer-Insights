@@ -55,9 +55,10 @@ def preprocess_text(text: str) -> str:
     processed = re.sub(number_pattern, '[NUM]', processed)
     
     # Step 5: Remove special characters except punctuation
-    # Keep letters, numbers, spaces, and common punctuation (.,!?;:'-")
+    # Keep letters (both upper and lower case for tokens), numbers, spaces, and common punctuation (.,!?;:'-")
     # Remove other special characters
-    special_chars_pattern = r'[^a-z0-9\s.,!?;:\'\"\-\[\]]'
+    # Note: We keep uppercase letters to preserve [URL], [EMAIL], [NUM] tokens
+    special_chars_pattern = r'[^a-zA-Z0-9\s.,!?;:\'\"\-\[\]]'
     processed = re.sub(special_chars_pattern, '', processed)
     
     # Step 6: Normalize whitespace to single spaces
@@ -69,7 +70,10 @@ def preprocess_text(text: str) -> str:
     
     # Final validation
     if not processed:
-        raise ValueError("Preprocessed text is empty")
+        raise ValueError(
+            "Preprocessed text is empty. The input text contained only special characters, "
+            "URLs, emails, or numbers that were replaced with tokens, resulting in no meaningful content."
+        )
     
     return processed
 

@@ -3,6 +3,7 @@
  * 
  * Handles customer interaction data ingestion with atomic transactions.
  * Implements the complete workflow: validate, enrich, store, queue ML job, emit event.
+ * Invalidates related caches on data updates (Requirement 14.7)
  * 
  * Requirements: 2.1, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 2.10, 2.11, 15.1-15.6, 15.10
  */
@@ -13,6 +14,7 @@ import { enrichInteraction, EnrichedInteraction } from './enrichmentService';
 import { mlAnalysisQueue } from '../config/queue';
 import { emitToOrganization } from '../config/websocket';
 import { logger } from '../config/logger';
+import * as cacheService from './cacheService';
 
 export class ValidationError extends Error {
   constructor(public errors: ValidationResult['errors']) {
@@ -113,6 +115,10 @@ export async function ingestInteractionWorkflow(data: InteractionData): Promise<
       channel: enrichedData.channel,
       eventType: enrichedData.eventType,
     });
+
+    // Step 7: Invalidate related caches (Requirement 14.7)
+    await cacheService.invalidateCustomerCache(enrichedData.customerId);
+    await cacheService.invalidateDashboardCache(enrichedData.organizationId);
 
     logger.info('Interaction ingested successfully', {
       interactionId,

@@ -6,16 +6,22 @@ import dotenv from 'dotenv';
 import { createServer } from 'http';
 import authRoutes from './routes/authRoutes';
 import dataRoutes from './routes/dataRoutes';
+import patternRoutes from './routes/patternRoutes';
+import insightsRoutes from './routes/insightsRoutes';
 import { errorHandler } from './middleware/errorHandler';
 import { requestLogger } from './middleware/requestLogger';
 import { globalRateLimiter } from './middleware/rateLimiter';
 import { initializeWebSocket } from './config/websocket';
+import { initializeRedis, checkRedisHealth } from './config/redis';
 
 dotenv.config();
 
 const app = express();
 const httpServer = createServer(app);
 const PORT = process.env.PORT || 3000;
+
+// Initialize Redis client
+initializeRedis();
 
 // Initialize WebSocket server
 initializeWebSocket(httpServer);
@@ -71,10 +77,18 @@ app.use(morgan('combined'));
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/data', dataRoutes);
+app.use('/api/patterns', patternRoutes);
+app.use('/api/insights', insightsRoutes);
 
 // Health check
-app.get('/health', (req: Request, res: Response) => {
-  res.json({ status: 'ok', service: 'api-gateway' });
+app.get('/health', async (req: Request, res: Response) => {
+  const redisHealthy = await checkRedisHealth();
+  
+  res.json({
+    status: redisHealthy ? 'ok' : 'degraded',
+    service: 'api-gateway',
+    redis: redisHealthy ? 'connected' : 'disconnected',
+  });
 });
 
 // 404 handler

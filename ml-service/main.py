@@ -7,6 +7,12 @@ import logging
 import time
 
 from sentiment_model import get_model, load_model_on_startup
+from pattern_detection import (
+    calculate_channel_frequency,
+    analyze_sentiment_trend,
+    detect_temporal_pattern,
+    calculate_engagement_score
+)
 
 # Configure logging
 logging.basicConfig(
@@ -305,3 +311,137 @@ async def batch_predict_sentiment(request: BatchPredictionRequest):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
+class PatternDetectionRequest(BaseModel):
+    customer_id: str = Field(..., description="Customer UUID")
+    interactions: List[Dict] = Field(..., min_length=1, description="List of customer interactions")
+
+
+class Pattern(BaseModel):
+    pattern_type: str
+    confidence: float = Field(..., ge=0.0, le=1.0)
+    frequency: int = Field(..., gt=0)
+    description: str
+    metadata: Dict
+
+
+class PatternDetectionResponse(BaseModel):
+    patterns: List[Pattern]
+    customer_id: str
+
+
+@app.post("/detect/patterns", response_model=PatternDetectionResponse)
+async def detect_patterns(request: PatternDetectionRequest):
+    """
+    Detect behavior patterns from customer interaction history.
+    
+    Analyzes interactions from the past 30 days to identify:
+    - Channel frequency patterns (>= 10 uses, regularity > 0.7)
+    - Sentiment patterns (consistency > 0.7)
+    - Temporal patterns (confidence > 0.7)
+    - Engagement patterns (score > 0.7)
+    
+    Args:
+        request: PatternDetectionRequest with customer_id and interactions list
+        
+    Returns:
+        PatternDetectionResponse with detected patterns sorted by confidence
+        
+    Raises:
+        HTTPException: 400 for insufficient data, 500 for detection errors
+    """
+    try:
+        interactions = request.interactions
+        
+        # Return empty list if customer has fewer than 5 interactions
+        if len(interactions) < 5:
+            logger.info(f"Insufficient interactions for pattern detection: {len(interactions)}")
+            return PatternDetectionResponse(
+                patterns=[],
+                customer_id=request.customer_id
+            )
+        
+        patterns = []
+        
+        # Detect channel frequency patterns
+        channel_frequency = calculate_channel_frequency(interactions)
+        for channel, freq in channel_frequency.items():
+            if freq['count'] >= 10 and freq['regularity'] > 0.7:
+                patterns.append(Pattern(
+                    pattern_type=f'frequent_{channel}_user',
+                    confidence=freq['regularity'],
+                    frequency=freq['count'],
+                    description=f'Customer frequently uses {channel} channel',
+                    metadata={
+                        'channel': channel,
+                        'avg_interval_hours': freq['avg_interval']
+                    }
+                ))
+        
+        # Detect sentiment patterns
+        sentiment_trend = analyze_sentiment_trend(interactions)
+        if sentiment_trend['consistency'] > 0.7:
+            patterns.append(Pattern(
+                pattern_type=f'{sentiment_trend["dominant"]}_sentiment_trend',
+                confidence=sentiment_trend['consistency'],
+                frequency=len(interactions),
+                description=f'Customer shows consistent {sentiment_trend["dominant"]} sentiment',
+                metadata={
+                    'trend': sentiment_trend['direction'],
+                    'average': sentiment_trend['average']
+                }
+            ))
+        
+        # Detect temporal patterns
+        temporal_pattern = detect_temporal_pattern(interactions)
+        if temporal_pattern and temporal_pattern['confidence'] > 0.7:
+            patterns.append(Pattern(
+                pattern_type='temporal_pattern',
+                confidence=temporal_pattern['confidence'],
+                frequency=temporal_pattern['occurrences'],
+                description=temporal_pattern['description'],
+                metadata=temporal_pattern['metadata']
+            ))
+        
+        # Detect engagement patterns
+        engagement = calculate_engagement_score(interactions)
+        if engagement['score'] > 0.7:
+            patterns.append(Pattern(
+                pattern_type=f'{engagement["level"]}_engagement',
+                confidence=engagement['score'],
+                frequency=engagement['interaction_count'],
+                description=f'Customer shows {engagement["level"]} engagement level',
+                metadata={
+                    'score': engagement['score'],
+                    'trend': engagement['trend']
+                }
+            ))
+        
+        # Filter patterns with confidence >= 0.7 and sort by confidence descending
+        filtered_patterns = [p for p in patterns if p.confidence >= 0.7]
+        filtered_patterns.sort(key=lambda p: p.confidence, reverse=True)
+        
+        logger.info(
+            f"Pattern detection completed for customer {request.customer_id}: "
+            f"{len(filtered_patterns)} patterns detected"
+        )
+        
+        return PatternDetectionResponse(
+            patterns=filtered_patterns,
+            customer_id=request.customer_id
+        )
+        
+    except ValueError as e:
+        logger.warning(f"Validation error in pattern detection: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+    
+    except HTTPException:
+        raise
+    
+    except Exception as e:
+        logger.error(f"Pattern detection error: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Pattern detection failed: {str(e)}"
+        )

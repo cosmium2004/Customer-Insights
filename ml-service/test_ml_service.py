@@ -114,6 +114,21 @@ class TestPreprocessText:
         # Should preserve basic punctuation
         assert "!" in result or "?" in result or "," in result or result.replace("!", "").replace("?", "").replace(",", "")
     
+    def test_preprocess_text_special_chars_only_raises_error(self):
+        """
+        Test that preprocess_text raises error for text with only special characters.
+        **Validates: Requirements 3.6, 7.1**
+        """
+        test_cases = [
+            "@@@ ### $$$",
+            "*** &&& %%%",
+            "~~~ ||| +++",
+        ]
+        
+        for text in test_cases:
+            with pytest.raises(ValueError, match="Preprocessed text is empty"):
+                preprocess_text(text)
+    
     def test_preprocess_text_combined_replacements(self):
         """
         Test that preprocess_text handles multiple replacement types together.
