@@ -17,6 +17,9 @@ import { mlAnalysisQueue } from '../config/queue';
 jest.mock('../config/queue', () => ({
   mlAnalysisQueue: {
     add: jest.fn().mockResolvedValue({ id: 'mock-job-id' }),
+    process: jest.fn(),
+    on: jest.fn(),
+    close: jest.fn().mockResolvedValue(undefined),
   },
 }));
 

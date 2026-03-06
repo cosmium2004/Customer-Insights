@@ -22,11 +22,16 @@ import { getDbConnection } from '../config/database';
 // Mock dependencies
 jest.mock('../config/database');
 jest.mock('../services/authService');
+jest.mock('../services/cacheService', () => ({
+  get: jest.fn().mockResolvedValue(null),
+  set: jest.fn().mockResolvedValue(undefined),
+}));
 jest.mock('../config/logger', () => ({
   logger: {
     error: jest.fn(),
     warn: jest.fn(),
     info: jest.fn(),
+    debug: jest.fn(),
   },
 }));
 
@@ -40,6 +45,14 @@ describe('Authentication Middleware', () => {
   beforeEach(() => {
     mockRequest = {
       headers: {},
+      method: 'GET',
+      path: '/api/test',
+      ip: '127.0.0.1',
+      get: jest.fn((header: string) => {
+        if (header === 'user-agent') return 'test-agent';
+        if (header === 'set-cookie') return undefined;
+        return undefined;
+      }) as any,
     };
     mockResponse = {};
     mockNext = jest.fn();

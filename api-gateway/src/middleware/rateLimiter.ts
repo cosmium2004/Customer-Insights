@@ -3,6 +3,7 @@ import rateLimit from 'express-rate-limit';
 import RedisStore from 'rate-limit-redis';
 import Redis from 'ioredis';
 import { logger } from '../config/logger';
+import { rateLimitViolations } from '../config/metrics';
 
 const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
 
@@ -43,6 +44,12 @@ export const authRateLimiter = rateLimit({
       ip,
       path: req.path,
       method: req.method,
+    });
+
+    // Track rate limit violation metric
+    rateLimitViolations.inc({
+      endpoint: req.path,
+      limit_type: 'auth',
     });
 
     res.status(429).json({
@@ -87,6 +94,12 @@ export const userRateLimiter = rateLimit({
       method: req.method,
     });
 
+    // Track rate limit violation metric
+    rateLimitViolations.inc({
+      endpoint: req.path,
+      limit_type: 'user',
+    });
+
     res.status(429).json({
       error: 'Too many requests. Please try again later.',
     });
@@ -121,6 +134,12 @@ export const globalRateLimiter = rateLimit({
       ip,
       path: req.path,
       method: req.method,
+    });
+
+    // Track rate limit violation metric
+    rateLimitViolations.inc({
+      endpoint: req.path,
+      limit_type: 'global',
     });
 
     res.status(429).json({

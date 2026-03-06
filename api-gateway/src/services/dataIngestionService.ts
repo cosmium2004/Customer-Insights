@@ -12,7 +12,7 @@ import { getDbConnection } from '../config/database';
 import { validateInteraction, ValidationResult, InteractionData } from './validationService';
 import { enrichInteraction, EnrichedInteraction } from './enrichmentService';
 import { mlAnalysisQueue } from '../config/queue';
-import { emitToOrganization } from '../config/websocket';
+import { emitInteractionCreated } from './websocketEventService';
 import { logger } from '../config/logger';
 import * as cacheService from './cacheService';
 
@@ -106,8 +106,8 @@ export async function ingestInteractionWorkflow(data: InteractionData): Promise<
       });
     }
 
-    // Step 6: Emit real-time event for WebSocket clients
-    emitToOrganization(enrichedData.organizationId, 'interaction.created', {
+    // Step 6: Emit real-time event for WebSocket clients (Requirement 2.8, 6.2)
+    await emitInteractionCreated({
       interactionId,
       customerId: enrichedData.customerId,
       organizationId: enrichedData.organizationId,

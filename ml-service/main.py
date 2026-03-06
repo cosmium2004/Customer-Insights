@@ -6,7 +6,10 @@ from typing import Dict, List, Optional
 import logging
 import time
 
-from sentiment_model import get_model, load_model_on_startup
+from sentiment_model_optimized import (
+    get_optimized_model as get_model,
+    load_optimized_model_on_startup as load_model_on_startup
+)
 from pattern_detection import (
     calculate_channel_frequency,
     analyze_sentiment_trend,

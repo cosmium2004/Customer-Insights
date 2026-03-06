@@ -6,8 +6,8 @@
  */
 
 import axios from 'axios';
-import { db } from '../config/database';
-import logger from '../config/logger';
+import { getDbConnection } from '../config/database';
+import { logger } from '../config/logger';
 
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:8000';
 
@@ -59,6 +59,7 @@ export async function detectBehaviorPatterns(
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     
+    const db = getDbConnection();
     const interactions = await db('customer_interactions')
       .where({
         customer_id: customerId,

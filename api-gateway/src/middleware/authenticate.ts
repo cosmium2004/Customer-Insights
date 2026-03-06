@@ -105,6 +105,16 @@ export async function authenticate(
 
     next();
   } catch (error) {
+    // Log authentication failure with timestamp and IP
+    logger.warn('Authentication failed', {
+      timestamp: new Date().toISOString(),
+      ip: req.ip,
+      path: req.path,
+      method: req.method,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      userAgent: req.get('user-agent'),
+    });
+
     if (error instanceof AuthenticationError) {
       next(error);
     } else {

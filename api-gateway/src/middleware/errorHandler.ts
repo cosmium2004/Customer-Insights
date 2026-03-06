@@ -52,6 +52,12 @@ export class ServiceUnavailableError extends AppError {
   }
 }
 
+export class InsufficientStorageError extends AppError {
+  constructor(message: string = 'Insufficient storage') {
+    super(message, 507);
+  }
+}
+
 /**
  * Global error handling middleware
  * Formats errors and returns appropriate HTTP status codes

@@ -1,12 +1,19 @@
 import crypto from 'crypto';
 import { getRedisClient } from '../config/redis';
 import { logger } from '../config/logger';
+import { cacheHitRate, cacheMissRate, updateCacheHitRatio } from '../config/metrics';
 
 /**
  * Cache Service
  * Provides caching operations with key generation and invalidation logic
  * Validates: Requirements 14.6, 14.7, 14.8, 14.9
  */
+
+// Track cache statistics for metrics
+const cacheStats = {
+  hits: 0,
+  misses: 0,
+};
 
 /**
  * Generate cache key for API endpoints
@@ -45,10 +52,16 @@ export async function get<T>(key: string): Promise<T | null> {
     
     if (!value) {
       logger.debug('Cache miss', { key });
+      cacheStats.misses++;
+      cacheMissRate.inc({ cache_type: 'redis' });
+      updateCacheHitRatio('redis', cacheStats.hits, cacheStats.misses);
       return null;
     }
     
     logger.debug('Cache hit', { key });
+    cacheStats.hits++;
+    cacheHitRate.inc({ cache_type: 'redis' });
+    updateCacheHitRatio('redis', cacheStats.hits, cacheStats.misses);
     return JSON.parse(value) as T;
   } catch (error) {
     logger.error('Cache get error', {

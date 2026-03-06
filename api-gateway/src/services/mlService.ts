@@ -1,16 +1,31 @@
 /**
  * ML Service Wrapper
  * 
- * Provides caching layer for ML predictions
- * Validates: Requirements 3.12, 8.5, 14.6
+ * Provides caching layer for ML predictions with circuit breaker protection
+ * Validates: Requirements 3.12, 7.11, 7.12, 8.5, 14.6
  */
 
 import axios from 'axios';
 import { logger } from '../config/logger';
 import * as cacheService from './cacheService';
+import { CircuitBreaker } from '../utils/circuitBreaker';
+import {
+  mlPredictionDuration,
+  mlPredictionTotal,
+  mlPredictionTimeoutRate,
+} from '../config/metrics';
 
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:8000';
 const ML_PREDICTION_CACHE_TTL = 3600; // 1 hour
+
+// Circuit breaker for ML service
+const mlCircuitBreaker = new CircuitBreaker({
+  failureThreshold: 5,
+  successThreshold: 2,
+  timeout: 60000,
+  resetTimeout: 30000,
+  name: 'ML-Service',
+});
 
 export interface SentimentPrediction {
   sentiment: string;
@@ -35,6 +50,9 @@ export async function predictSentiment(
   text: string,
   modelType: string = 'default'
 ): Promise<SentimentPrediction> {
+  const startTime = Date.now();
+  let status = 'success';
+
   try {
     // Generate cache key: ml:{model_type}:{hash(text)}
     const cacheKey = cacheService.generateMLCacheKey(modelType, text);
@@ -43,30 +61,52 @@ export async function predictSentiment(
     const cached = await cacheService.get<SentimentPrediction>(cacheKey);
     if (cached) {
       logger.debug('ML prediction cache hit', { modelType, textLength: text.length });
+      mlPredictionTotal.inc({ model_type: modelType, status: 'cached' });
       return cached;
     }
 
-    // Cache miss - call ML service
+    // Cache miss - call ML service with circuit breaker and retry
     logger.debug('ML prediction cache miss', { modelType, textLength: text.length });
 
-    const response = await axios.post(
-      `${ML_SERVICE_URL}/predict/sentiment`,
-      {
-        text,
-        model_type: modelType,
+    const prediction = await mlCircuitBreaker.executeWithRetry(
+      async () => {
+        const response = await axios.post(
+          `${ML_SERVICE_URL}/predict/sentiment`,
+          {
+            text,
+            model_type: modelType,
+          },
+          {
+            timeout: 600, // 600ms timeout (100ms buffer over 500ms SLA)
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+
+        return response.data as SentimentPrediction;
       },
-      {
-        timeout: 600, // 600ms timeout (100ms buffer over 500ms SLA)
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
+      3, // max retries
+      100 // base delay in ms
     );
 
-    const prediction: SentimentPrediction = response.data;
+    // Track prediction duration
+    const duration = Date.now() - startTime;
+    mlPredictionDuration.observe({ model_type: modelType, status }, duration);
+
+    // Track timeout if prediction took too long
+    if (prediction.processing_time_ms > 500) {
+      mlPredictionTimeoutRate.inc({ model_type: modelType });
+      logger.warn('ML prediction exceeded SLA', {
+        modelType,
+        processingTime: prediction.processing_time_ms,
+      });
+    }
 
     // Cache the prediction (1-hour TTL)
     await cacheService.set(cacheKey, prediction, ML_PREDICTION_CACHE_TTL);
+
+    mlPredictionTotal.inc({ model_type: modelType, status });
 
     logger.info('ML prediction completed and cached', {
       modelType,
@@ -77,6 +117,11 @@ export async function predictSentiment(
 
     return prediction;
   } catch (error) {
+    status = 'error';
+    const duration = Date.now() - startTime;
+    mlPredictionDuration.observe({ model_type: modelType, status }, duration);
+    mlPredictionTotal.inc({ model_type: modelType, status });
+
     if (axios.isAxiosError(error)) {
       logger.error('ML service error during sentiment prediction', {
         error: error.message,
@@ -198,4 +243,11 @@ export async function batchPredictSentiment(
     });
     throw error;
   }
+}
+
+/**
+ * Get ML circuit breaker statistics
+ */
+export function getMLCircuitBreakerStats() {
+  return mlCircuitBreaker.getStats();
 }

@@ -1,6 +1,18 @@
 import knex, { Knex } from 'knex';
+import { CircuitBreaker } from '../utils/circuitBreaker';
+import { logger } from './logger';
+import { setupQueryLogging as setupQueryLoggingUtil } from '../utils/queryLogger';
 
 let db: Knex | null = null;
+
+// Circuit breaker for database connections
+const dbCircuitBreaker = new CircuitBreaker({
+  failureThreshold: 5,
+  successThreshold: 2,
+  timeout: 60000,
+  resetTimeout: 30000,
+  name: 'Database',
+});
 
 /**
  * Get database connection instance
@@ -20,12 +32,51 @@ export function getDbConnection(): Knex {
       pool: {
         min: parseInt(process.env.DB_POOL_MIN || '2'),
         max: parseInt(process.env.DB_POOL_MAX || '10'),
+        afterCreate: (conn: any, done: any) => {
+          // Test connection after creation
+          conn.query('SELECT 1', (err: any) => {
+            if (err) {
+              logger.error('Database connection test failed', { error: err.message });
+            }
+            done(err, conn);
+          });
+        },
       },
       acquireConnectionTimeout: 10000,
     });
   }
 
   return db;
+}
+
+/**
+ * Execute a database query with circuit breaker protection
+ */
+export async function executeQuery<T>(
+  queryFn: (db: Knex) => Promise<T>
+): Promise<T> {
+  return dbCircuitBreaker.executeWithRetry(
+    async () => {
+      const connection = getDbConnection();
+      return await queryFn(connection);
+    },
+    3, // max retries
+    100 // base delay in ms
+  );
+}
+
+/**
+ * Get circuit breaker statistics
+ */
+export function getDbCircuitBreakerStats() {
+  return dbCircuitBreaker.getStats();
+}
+
+/**
+ * Setup database query logging
+ */
+export function setupQueryLogging(db: Knex): void {
+  setupQueryLoggingUtil(db);
 }
 
 /**
